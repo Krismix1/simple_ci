@@ -1,11 +1,11 @@
 package models;
 
 public class Commit {
-    public String repository; // to be converted to an object?
-    public String branch; // to be converted to an object?
-    public String hash;
+    private Repository repository;
+    private String branch; // to be converted to an object?
+    private String hash;
 
-    public Commit(String repository, String branch, String hash) {
+    public Commit(Repository repository, String branch, String hash) {
         this.repository = repository;
         this.branch = branch;
         this.hash = hash;

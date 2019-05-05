@@ -1,29 +1,28 @@
 package monitor;
 
-import forwarding.Dispatcher;
+import messaging.Publisher;
 import models.Commit;
+import models.Repository;
 
 import java.util.Optional;
 
 // this class might become abstract
 // as we can poll a repo on the local file system
 // or over HTTP (Github, GitLab, Bitbucket etc.)
-public class PollingMonitor extends AbstractMonitor implements Runnable {
-
-    private static final String DEFAULT_BRANCH = "master";
+public abstract class PollingMonitor extends AbstractMonitor implements Runnable {
 
     private boolean stopped = false;
-    private final String repository;
+    final Repository repository;
 
-    public PollingMonitor(Dispatcher forwarder, String repository) {
-        super(forwarder);
+    PollingMonitor(Publisher publisher, Repository repository) {
+        super(publisher);
         this.repository = repository;
     }
 
     @Override
     public void run() {
         while (!this.stopped) {
-            checkNewCommits()
+            this.checkNewCommits()
                     .ifPresent(this::notifyRepoUpdated);
             try {
                 Thread.sleep(5000L);
@@ -33,12 +32,9 @@ public class PollingMonitor extends AbstractMonitor implements Runnable {
         }
     }
 
-    private Optional<Commit> checkNewCommits() {
-        return Math.random() < 0.5 ? Optional.empty() : Optional.of(new Commit(this.repository, DEFAULT_BRANCH, String.valueOf(Math.random())));
-    }
+    abstract Optional<Commit> checkNewCommits();
 
     public void stop() {
         this.stopped = true;
     }
-
 }

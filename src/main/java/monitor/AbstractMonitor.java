@@ -1,14 +1,17 @@
 package monitor;
 
-import forwarding.Dispatcher;
+import messaging.Publisher;
 import models.Commit;
 
-public abstract class AbstractMonitor {
+abstract class AbstractMonitor {
 
-    public AbstractMonitor(Dispatcher forwarder) {
+    private final Publisher publisher;
+
+    AbstractMonitor(Publisher publisher) {
+        this.publisher = publisher;
     }
 
-    protected boolean notifyRepoUpdated(Commit commit) {
-        throw new UnsupportedOperationException();
+    void notifyRepoUpdated(Commit commit) {
+        this.publisher.publishMessage(commit);
     }
 }
