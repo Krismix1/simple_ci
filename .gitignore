@@ -70,3 +70,6 @@ modules.xml
 
 # End of https://www.gitignore.io/api/intellij+all
 target/
+
+src/**/*.commit_hash
+.commit_hash

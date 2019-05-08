@@ -10,4 +10,8 @@ public class Commit {
         this.branch = branch;
         this.hash = hash;
     }
+
+    public String getHash() {
+        return hash;
+    }
 }
