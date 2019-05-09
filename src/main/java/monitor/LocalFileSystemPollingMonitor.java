@@ -18,23 +18,47 @@ import java.util.logging.Logger;
 public class LocalFileSystemPollingMonitor extends PollingMonitor {
 
     private static final Logger logger = Logger.getLogger(LocalFileSystemPollingMonitor.class.getName());
+    private static final String REPOSITORY_CLONE_DIRECTORY = "/tmp"; // TODO: Read this value from system info
 
     private static final String DEFAULT_BRANCH = "master";
     private static final int SUCCESS = 0;
-    private final String path;
+    private final String sourcePath;
+    private String clonePath;
 
-    public LocalFileSystemPollingMonitor(Publisher publisher, String path) {
+    public LocalFileSystemPollingMonitor(Publisher publisher, String path) throws Exception {
         super(publisher, new LocalFileSystemRepository(path));
-        this.path = path;
+        this.sourcePath = path;
+        this.init();
+    }
+
+    private void init() throws Exception {
+        final String[] split = this.sourcePath.split(File.separator);
+        String repoName = split[split.length - 1];
+        this.clonePath = Paths.get(REPOSITORY_CLONE_DIRECTORY, repoName).toAbsolutePath().toString();
+
+        Path scriptsFolder = this.getScriptsFolder();
+        Process process = new ProcessBuilder("bash", "clone_repo_locally.sh", this.sourcePath, this.clonePath)
+                .directory(scriptsFolder.toFile())
+                .start();
+        int exit_code = process.waitFor();
+        if (exit_code != SUCCESS) {
+            BufferedReader errorStream = new BufferedReader(new InputStreamReader(process.getErrorStream(), Charset.forName("UTF-8")));
+            logger.severe(String.format("Could not clone repo. Reason: %s", errorStream.readLine()));
+            throw new Exception("Failed to clone");
+        }
+    }
+
+    private Path getScriptsFolder() {
+        Path currentPath = Paths.get(System.getProperty("user.dir"));
+        return Paths.get(currentPath.toString(), "src", "main", "java", "monitor");
     }
 
     @Override
     Optional<Commit> checkNewCommits() {
         // FIXME: 08-May-19 Extract file handling to a separate class?
         try {
-            Path currentPath = Paths.get(System.getProperty("user.dir"));
-            Path scriptsFolder = Paths.get(currentPath.toString(), "src", "main", "java", "monitor");
-            Process process = new ProcessBuilder("bash", "check_commit.sh", this.path)
+            Path scriptsFolder = this.getScriptsFolder();
+            Process process = new ProcessBuilder("bash", "check_commit.sh", this.clonePath)
                     .directory(scriptsFolder.toFile())
                     .start();
 

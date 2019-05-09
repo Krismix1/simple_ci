@@ -8,7 +8,7 @@ import java.util.Optional;
 
 // this class might become abstract
 // as we can poll a repo on the local file system
-// or over HTTP (Github, GitLab, Bitbucket etc.)
+// or over network (Github, GitLab, Bitbucket etc.)
 public abstract class PollingMonitor extends AbstractMonitor implements Runnable {
 
     private boolean stopped = false;
