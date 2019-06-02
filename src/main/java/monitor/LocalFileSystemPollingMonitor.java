@@ -13,19 +13,21 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.logging.Logger;
+
+// TODO: 5/19/19 Consider using JGit (or other git clients) for interactions with git from java
+// https://git-scm.com/book/uz/v2/Appendix-B%3A-Embedding-Git-in-your-Applications-JGit
+
 
 public class LocalFileSystemPollingMonitor extends PollingMonitor {
 
-    private static final Logger logger = Logger.getLogger(LocalFileSystemPollingMonitor.class.getName());
-    private static final String REPOSITORY_CLONE_DIRECTORY = "/tmp"; // TODO: Read this value from system info
+    private static final String REPOSITORY_CLONE_DIRECTORY = System.getProperty("java.io.tmpdir");
 
     private static final String DEFAULT_BRANCH = "master";
     private static final int SUCCESS = 0;
     private final String sourcePath;
     private String clonePath;
 
-    public LocalFileSystemPollingMonitor(Publisher publisher, String path) throws Exception {
+    public LocalFileSystemPollingMonitor(Publisher<Commit> publisher, String path) throws Exception {
         super(publisher, new LocalFileSystemRepository(path));
         this.sourcePath = path;
         this.init();
@@ -36,6 +38,7 @@ public class LocalFileSystemPollingMonitor extends PollingMonitor {
         String repoName = split[split.length - 1];
         this.clonePath = Paths.get(REPOSITORY_CLONE_DIRECTORY, repoName).toAbsolutePath().toString();
 
+        logger.finest(String.format("Will clone %s to %s", sourcePath, clonePath));
         Path scriptsFolder = this.getScriptsFolder();
         Process process = new ProcessBuilder("bash", "clone_repo_locally.sh", this.sourcePath, this.clonePath)
                 .directory(scriptsFolder.toFile())

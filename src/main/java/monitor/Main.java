@@ -1,8 +1,15 @@
 package monitor;
 
+import messaging.Publisher;
+import messaging.rabbitmq.RabbitMQConnectionFactory;
+import messaging.rabbitmq.RabbitMQConnectionParameters;
+import messaging.rabbitmq.RabbitMQPublisher;
 import models.Commit;
 
-import java.util.Optional;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 public class Main {
     public static void main(String[] args) {
@@ -11,10 +18,30 @@ public class Main {
             System.exit(1);
         }
         String repo = args[0];
+        Logger rootLogger = LogManager.getLogManager().getLogger("");
+        rootLogger.setLevel(Level.ALL);
+        for (Handler h : rootLogger.getHandlers()) {
+            h.setLevel(Level.ALL);
+        }
+
         try {
-            LocalFileSystemPollingMonitor monitor = new LocalFileSystemPollingMonitor(null, repo);
-            final Optional<Commit> commit = monitor.checkNewCommits();
-            commit.ifPresent(v -> System.out.println(v.getHash()));
+
+            Publisher<Commit> publisher = new RabbitMQPublisher<>(new RabbitMQConnectionFactory(
+                    new RabbitMQConnectionParameters.RabbitMQParametersBuilder()
+                            .build()
+            ));
+
+            LocalFileSystemPollingMonitor monitor = new LocalFileSystemPollingMonitor(publisher, repo);
+//            final Thread monitorThread = new Thread(monitor);
+//            monitorThread.start();
+            // add sigterm handling
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("\r\nReceived termination signal.\r\nCleaning up the mess...");
+                monitor.stop();
+            }));
+            //
+            monitor.run();
+            System.out.println("Monitor daemon stopped");
         } catch (Exception e) {
             e.printStackTrace();
         }
