@@ -32,14 +32,12 @@ public class Main {
             ));
 
             LocalFileSystemPollingMonitor monitor = new LocalFileSystemPollingMonitor(publisher, repo);
-//            final Thread monitorThread = new Thread(monitor);
-//            monitorThread.start();
             // add sigterm handling
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 System.out.println("\r\nReceived termination signal.\r\nCleaning up the mess...");
                 monitor.stop();
             }));
-            //
+
             monitor.run();
             System.out.println("Monitor daemon stopped");
         } catch (Exception e) {

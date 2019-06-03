@@ -10,7 +10,7 @@ import java.util.Optional;
 // this class is abstract
 // as we can poll a repo on the local file system
 // or over network (Github, GitLab, Bitbucket etc.)
-public abstract class PollingMonitor extends AbstractMonitor implements Runnable {
+public abstract class PollingMonitor extends AbstractMonitor {
 
     private boolean stopped = false;
     final Repository repository;
@@ -20,7 +20,6 @@ public abstract class PollingMonitor extends AbstractMonitor implements Runnable
         this.repository = repository;
     }
 
-    @Override
     public final void run() {
         while (!this.stopped) {
             // The lines bellow can be written as this:

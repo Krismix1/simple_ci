@@ -33,42 +33,45 @@ public final class RabbitMQConnectionParameters {
 
     public static class RabbitMQParametersBuilder {
 
-        private String host = "localhost";
-        private int port = 5672;
-        private String user = "guest";
-        private String password = "guest";
-        private String vhost = "/";
+        private RabbitMQConnectionParameters parameters;
+
+        public RabbitMQParametersBuilder() {
+            parameters = new RabbitMQConnectionParameters();
+            // initialize with the default values of rabbitmq
+            parameters.host = "localhost";
+            parameters.port = 5672;
+            parameters.user = "guest";
+            parameters.password = "guest";
+            parameters.vhost = "/";
+        }
 
         public RabbitMQParametersBuilder host(String host) {
-            this.host = host;
+            this.parameters.host = host;
             return this;
         }
 
-        public RabbitMQParametersBuilder atPort(int port) {
-            this.port = port;
+        public RabbitMQParametersBuilder onPort(int port) {
+            this.parameters.port = port;
             return this;
         }
 
-        public RabbitMQParametersBuilder withUserCredentials(String user, String password) {
-            this.user = user;
-            this.password = password;
+        public RabbitMQParametersBuilder withUser(String user) {
+            this.parameters.user = user;
+            return this;
+        }
+
+        public RabbitMQParametersBuilder withPassword(String password) {
+            this.parameters.password = password;
             return this;
         }
 
         public RabbitMQParametersBuilder vhost(String vhost) {
-            this.vhost = vhost;
+            this.parameters.vhost = vhost;
             return this;
         }
 
-
         public RabbitMQConnectionParameters build() {
-            RabbitMQConnectionParameters parameters = new RabbitMQConnectionParameters();
-            parameters.host     = this.host;
-            parameters.port     = this.port;
-            parameters.user     = this.user;
-            parameters.vhost    = this.vhost;
-            parameters.password = this.password;
-            return parameters;
+            return this.parameters;
         }
     }
 }

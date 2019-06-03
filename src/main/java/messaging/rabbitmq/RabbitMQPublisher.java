@@ -42,7 +42,7 @@ public class RabbitMQPublisher<T extends Message> implements Publisher<T> {
     public void publishMessage(T message) {
 
         if (!initialized) {
-            init("huh"); // FIXME: ???
+            init("commits"); // FIXME: Need to find a better way to manage the RabbitMQ objects
             initialized = true;
         }
 
