@@ -72,11 +72,11 @@ public final class RabbitMQConnectionParameters {
 
         public RabbitMQConnectionParameters build() {
             RabbitMQConnectionParameters result = new RabbitMQConnectionParameters();
-            result.host     = parameters.host
-            result.port     = parameters.port
-            result.user     = parameters.user
-            result.password = parameters.password
-            result.vhost    = parameters.vhost
+            result.host     = parameters.host;
+            result.port     = parameters.port;
+            result.user     = parameters.user;
+            result.password = parameters.password;
+            result.vhost    = parameters.vhost;
             return result;
         }
     }
