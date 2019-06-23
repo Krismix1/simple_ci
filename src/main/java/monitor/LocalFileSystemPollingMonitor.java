@@ -24,19 +24,21 @@ public class LocalFileSystemPollingMonitor extends PollingMonitor {
 
     private static final String DEFAULT_BRANCH = "master";
     private static final int SUCCESS = 0;
+
     private final String sourcePath;
     private String clonePath;
+    private final FileSystemHelper fsHelper;
 
     public LocalFileSystemPollingMonitor(Publisher<Commit> publisher, String path) throws Exception {
         super(publisher, new LocalFileSystemRepository(path));
-        this.sourcePath = path;
+        this.fsHelper = new UnixFileSystemHelper();
+        this.sourcePath = this.fsHelper.getDirectoryPath(path);
         this.init();
     }
 
     private void init() throws Exception {
-        final String[] split = this.sourcePath.split(File.separator);
-        String repoName = split[split.length - 1];
-        this.clonePath = Paths.get(REPOSITORY_CLONE_DIRECTORY, repoName).toAbsolutePath().toString();
+        String repoName = this.fsHelper.getDirectoryName(this.sourcePath);
+        this.clonePath = this.fsHelper.join(REPOSITORY_CLONE_DIRECTORY, repoName);
 
         logger.finest(String.format("Will clone %s to %s", sourcePath, clonePath));
         Path scriptsFolder = this.getScriptsFolder();
