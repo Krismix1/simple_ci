@@ -14,6 +14,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.internal.storage.file.FileRepository;
+
 // TODO: 5/19/19 Consider using JGit (or other git clients) for interactions with git from java
 // https://git-scm.com/book/uz/v2/Appendix-B%3A-Embedding-Git-in-your-Applications-JGit
 
@@ -27,6 +30,8 @@ public class LocalFileSystemPollingMonitor extends PollingMonitor {
 
     private final String sourcePath;
     private String clonePath;
+    private Git sourceRepoObj;
+    private Git cloneRepoObj;
     private final FileSystemHelper fsHelper;
 
     public LocalFileSystemPollingMonitor(Publisher<Commit> publisher, String path) throws Exception {
@@ -41,16 +46,19 @@ public class LocalFileSystemPollingMonitor extends PollingMonitor {
         this.clonePath = this.fsHelper.join(REPOSITORY_CLONE_DIRECTORY, repoName);
 
         logger.finest(String.format("Will clone %s to %s", sourcePath, clonePath));
-        Path scriptsFolder = this.getScriptsFolder();
-        Process process = new ProcessBuilder("bash", "clone_repo_locally.sh", this.sourcePath, this.clonePath)
-                .directory(scriptsFolder.toFile())
-                .start();
-        int exit_code = process.waitFor();
-        if (exit_code != SUCCESS) {
-            BufferedReader errorStream = new BufferedReader(new InputStreamReader(process.getErrorStream(), Charset.forName("UTF-8")));
-            logger.severe(String.format("Could not clone repo. Reason: %s", errorStream.readLine()));
-            throw new Exception("Failed to clone");
-        }
+
+        this.sourceRepoObj = new Git(new FileRepository(this.sourcePath));
+
+        // TODO: Check if directory exists
+            // If so, initialize the git object
+            // Read the last commit
+            // Create a new job for each new commit from that point
+        // else, clone the repo
+        this.cloneRepoObj = Git.cloneRepository()
+                     .setURI(this.sourcePath)
+                     .setDirectory(new File(this.clonePath))
+                     .call();
+        // cloneRepoObj refers to the new folder
     }
 
     private Path getScriptsFolder() {
