@@ -1,24 +1,21 @@
 package monitor;
 
+import exceptions.OperationFailedException;
+import filesystem.FileSystemHelper;
+import filesystem.UnixFileSystemHelper;
 import messaging.Publisher;
 import models.Commit;
 import models.Repository;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Optional;
-
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.api.MergeCommand;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevWalk;
 
-// TODO: 5/19/19 Consider using JGit (or other git clients) for interactions with git from java
-// https://git-scm.com/book/uz/v2/Appendix-B%3A-Embedding-Git-in-your-Applications-JGit
+import java.io.File;
+import java.util.List;
+import java.util.Optional;
 
 
 public class LocalFileSystemPollingMonitor extends PollingMonitor {
@@ -36,61 +33,83 @@ public class LocalFileSystemPollingMonitor extends PollingMonitor {
 
     public LocalFileSystemPollingMonitor(Publisher<Commit> publisher, String path) throws Exception {
         super(publisher, new LocalFileSystemRepository(path));
-        this.fsHelper = new UnixFileSystemHelper();
-        this.sourcePath = this.fsHelper.getDirectoryPath(path);
-        this.init();
+        fsHelper = new UnixFileSystemHelper();
+        sourcePath = fsHelper.getDirectoryPath(path);
+        init();
     }
 
     private void init() throws Exception {
-        String repoName = this.fsHelper.getDirectoryName(this.sourcePath);
-        this.clonePath = this.fsHelper.join(REPOSITORY_CLONE_DIRECTORY, repoName);
+        String repoName = fsHelper.getDirectoryName(sourcePath);
+        clonePath = fsHelper.join(REPOSITORY_CLONE_DIRECTORY, repoName);
 
         logger.finest(String.format("Will clone %s to %s", sourcePath, clonePath));
 
-        this.sourceRepoObj = new Git(new FileRepository(this.sourcePath));
+        sourceRepoObj = Git.open(new File(sourcePath));
 
-        // TODO: Check if directory exists
-            // If so, initialize the git object
+        // Check if clone directory exists
+        if (fsHelper.isDirectory(clonePath)) {
+            // TODO: If so, initialize the git object
             // Read the last commit
             // Create a new job for each new commit from that point
-        // else, clone the repo
-        this.cloneRepoObj = Git.cloneRepository()
-                     .setURI(this.sourcePath)
-                     .setDirectory(new File(this.clonePath))
-                     .call();
-        // cloneRepoObj refers to the new folder
-    }
-
-    private Path getScriptsFolder() {
-        Path currentPath = Paths.get(System.getProperty("user.dir"));
-        return Paths.get(currentPath.toString(), "src", "main", "java", "monitor");
+            cloneRepoObj = Git.open(new File(clonePath));
+        } else {
+            // else, clone the repo
+            cloneRepoObj = Git.cloneRepository()
+                .setURI(sourcePath)
+                .setDirectory(new File(clonePath))
+                .call();
+        }
     }
 
     @Override
     Optional<Commit> checkNewCommits() {
-        // FIXME: 08-May-19 Extract file handling to a separate class?
+        String sourceCommit = getCommitHash(sourceRepoObj, DEFAULT_BRANCH)
+            .orElseThrow(() -> new OperationFailedException(
+                String.format("Failed to retrieve last commit for repo %s, branch %s",
+                sourceRepoObj.getRepository().getIdentifier(),
+                DEFAULT_BRANCH))
+            );
+        String cloneCommit = getCommitHash(cloneRepoObj, DEFAULT_BRANCH)
+            .orElseThrow(() -> new OperationFailedException(
+                String.format("Failed to retrieve last commit for repo %s, branch %s",
+                    cloneRepoObj.getRepository().getIdentifier(),
+                    DEFAULT_BRANCH))
+            );
+        if (sourceCommit.equals(cloneCommit)) {
+            return Optional.empty();
+        }
+        // TODO: 6/27/19 Generate intermediate entries in the queue?
         try {
-            Path scriptsFolder = this.getScriptsFolder();
-            Process process = new ProcessBuilder("bash", "check_commit.sh", this.clonePath)
-                    .directory(scriptsFolder.toFile())
-                    .start();
+            cloneRepoObj
+                .pull()
+                .setFastForward(MergeCommand.FastForwardMode.FF_ONLY)
+                .call();
+        } catch (GitAPIException e) {
+            logger.severe(String.format(
+                "Failed to fast-forward repo %s, branch %s",
+                cloneRepoObj.getRepository().getIdentifier(),
+                DEFAULT_BRANCH
+            ));
+            // let's try again the next time
+            return Optional.empty();
+        }
+        return Optional.of(new Commit(repository, DEFAULT_BRANCH, sourceCommit));
+    }
 
-            int exit_code = process.waitFor();
-            if (exit_code == SUCCESS) {
-                File hashFile = Paths.get(scriptsFolder.toString(), ".commit_hash").toFile();
-                try (BufferedReader input = new BufferedReader(new FileReader(hashFile))) {
-                    String hash = input.readLine();
-                    return Optional.of(new Commit(this.repository, DEFAULT_BRANCH, hash));
-                } catch (IOException e) {
-                    logger.severe(e.toString());
+    private Optional<String> getCommitHash(Git repo, String branchId) {
+        RevWalk walk = new RevWalk(repo.getRepository());
+        try {
+            List<Ref> branches = repo.branchList().call();
+            for (Ref branch : branches) {
+                if (branch.getName().endsWith(branchId)) {
+                    RevCommit commit = walk.lookupCommit(branch.getObjectId());
+                    return Optional.of(commit.getName());
                 }
-            } else {
-                // FIXME: 08-May-19 When there are no new commits, the check_commit.sh exits with 1, thus it enters this block
-                BufferedReader errorStream = new BufferedReader(new InputStreamReader(process.getErrorStream(), Charset.forName("UTF-8")));
-                logger.severe(String.format("Could not check for new commit. Reason: %s", errorStream.readLine()));
             }
-        } catch (IOException | InterruptedException e) {
-            logger.severe(e.toString());
+        } catch (GitAPIException e) {
+            logger.severe(String.format("Failed to retrieve last commit for repo %s, branch %s",
+                repo.getRepository().getIdentifier(),
+                branchId));
         }
         return Optional.empty();
     }

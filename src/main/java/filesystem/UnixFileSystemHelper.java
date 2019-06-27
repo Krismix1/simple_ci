@@ -1,19 +1,20 @@
-package monitor;
+package filesystem;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import java.util.logging.Logger;
 
 public class UnixFileSystemHelper implements FileSystemHelper {
 
-    final Logger logger = Logger.getLogger(this.getClass().getName());
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
 
     @Override
     public String getDirectoryName(String path) throws IOException {
+        // TODO: Check if the directory exists?
         path = this.getDirectoryPath(path);
         String[] paths = path.split(File.separator);
         return paths[paths.length - 1];
@@ -40,6 +41,7 @@ public class UnixFileSystemHelper implements FileSystemHelper {
 
     @Override
     public String getDirectoryPath(String path) throws IOException {
+        // TODO: Check if the directory exists?
         Path pathObj = Paths.get(path)
                             .normalize()
                             .toRealPath()
@@ -53,5 +55,16 @@ public class UnixFileSystemHelper implements FileSystemHelper {
             pathObj = pathObj.getParent();
         }
         return pathObj.toString();
+    }
+
+    @Override
+    public boolean isDirectory(String path) {
+        try {
+            Path dirPath = Paths.get(this.getDirectoryPath(path));
+            return Files.isDirectory(dirPath);
+        } catch (IOException ex) {
+            logger.info(String.format("Path not found: %s", ex.getMessage()));
+            return false;
+        }
     }
 }
