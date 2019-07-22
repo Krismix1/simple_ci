@@ -24,7 +24,6 @@ public class LocalFileSystemPollingMonitor extends PollingMonitor {
     private static final String REPOSITORY_CLONE_DIRECTORY = System.getProperty("java.io.tmpdir");
 
     private static final String DEFAULT_BRANCH = "master";
-    private static final int SUCCESS = 0;
 
     private final String sourcePath;
     private String clonePath;

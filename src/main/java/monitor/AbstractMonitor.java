@@ -18,8 +18,8 @@ abstract class AbstractMonitor {
     }
 
     void notifyRepoUpdated(Commit commit) {
-        System.out.println("New commit detected");
-        System.out.println("Commit hash " + commit.getHash());
+        this.logger.finest("New commit detected");
+        this.logger.finest("Commit hash " + commit.getHash());
         this.publisher.publishMessage(commit);
     }
 }
