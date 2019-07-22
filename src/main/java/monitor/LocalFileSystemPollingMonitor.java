@@ -14,6 +14,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,29 +36,59 @@ public class LocalFileSystemPollingMonitor extends PollingMonitor {
         super(publisher, new LocalFileSystemRepository(path));
         fsHelper = new UnixFileSystemHelper();
         sourcePath = fsHelper.getDirectoryPath(path);
-        init();
     }
 
-    private void init() throws Exception {
-        String repoName = fsHelper.getDirectoryName(sourcePath);
+    @Override
+    void init() {
+        String repoName = null;
+        try {
+            repoName = fsHelper.getDirectoryName(sourcePath);
+        } catch(IOException e) {
+            throw new OperationFailedException(String.format(
+                "Failed to retrieve directory name from path %s",
+                sourcePath
+            ));
+        }
         clonePath = fsHelper.join(REPOSITORY_CLONE_DIRECTORY, repoName);
 
         logger.finest(String.format("Will clone %s to %s", sourcePath, clonePath));
 
-        sourceRepoObj = Git.open(new File(sourcePath));
+        try {
+            sourceRepoObj = Git.open(new File(sourcePath));
+        } catch(Exception e) {
+            throw new OperationFailedException(String.format(
+                "Failed to open source repository: %s",
+                sourcePath
+            ));
+        }
 
         // Check if clone directory exists
         if (fsHelper.isDirectory(clonePath)) {
             // TODO: If so, initialize the git object
             // Read the last commit
             // Create a new job for each new commit from that point
-            cloneRepoObj = Git.open(new File(clonePath));
+            try {
+                cloneRepoObj = Git.open(new File(clonePath));
+            } catch(Exception e) {
+                throw new OperationFailedException(String.format(
+                    "Failed to open repository clone path: %s",
+                    clonePath
+                ));
+            }
         } else {
             // else, clone the repo
-            cloneRepoObj = Git.cloneRepository()
-                .setURI(sourcePath)
-                .setDirectory(new File(clonePath))
-                .call();
+            try {
+                cloneRepoObj = Git.cloneRepository()
+                    .setURI(sourcePath)
+                    .setDirectory(new File(clonePath))
+                    .call();
+            } catch(Exception e) {
+                throw new OperationFailedException(String.format(
+                    "Failed to clone repository %s to %s",
+                    sourcePath,
+                    clonePath
+                ));
+            }
         }
     }
 

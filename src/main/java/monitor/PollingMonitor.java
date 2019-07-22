@@ -21,6 +21,8 @@ public abstract class PollingMonitor extends AbstractMonitor {
     }
 
     public final void run() {
+        this.init();
+
         while (!this.stopped) {
             // The lines bellow can be written as this:
 //            Optional<Commit> commit = this.checkNewCommits();
@@ -40,6 +42,8 @@ public abstract class PollingMonitor extends AbstractMonitor {
     }
 
     abstract Optional<Commit> checkNewCommits();
+
+    abstract void init();
 
     public void stop() {
         logger.finest("stop method called");
