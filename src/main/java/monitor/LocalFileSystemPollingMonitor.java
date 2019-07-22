@@ -63,9 +63,6 @@ public class LocalFileSystemPollingMonitor extends PollingMonitor {
 
         // Check if clone directory exists
         if (fsHelper.isDirectory(clonePath)) {
-            // TODO: If so, initialize the git object
-            // Read the last commit
-            // Create a new job for each new commit from that point
             try {
                 cloneRepoObj = Git.open(new File(clonePath));
             } catch(Exception e) {
