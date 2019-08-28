@@ -17,9 +17,20 @@ abstract class AbstractMonitor {
         this.publisher = Objects.requireNonNull(publisher);
     }
 
+    /**
+     * Method to be called when new commits are detected.
+     * The commit will be added to a queue in order to be processed.
+     *
+     * @param commit the new commit, must not be null.
+     * @throws IllegalArgumentException when the {@code commit} param is null.
+     */
     void notifyRepoUpdated(Commit commit) {
+        if (commit == null) {
+            throw new IllegalArgumentException("Commit object should not be null");
+        }
         this.logger.finest("New commit detected");
         this.logger.finest("Commit hash " + commit.getHash());
+
         this.publisher.publishMessage(commit);
     }
 }
