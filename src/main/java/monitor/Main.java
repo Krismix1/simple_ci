@@ -5,6 +5,7 @@ import messaging.rabbitmq.RabbitMQConnectionFactory;
 import messaging.rabbitmq.RabbitMQConnectionParameters;
 import messaging.rabbitmq.RabbitMQPublisher;
 import models.Commit;
+import sleepers.ThreadSleeper;
 
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -31,7 +32,9 @@ public class Main {
                             .build()
             ));
 
-            LocalFileSystemPollingMonitor monitor = new LocalFileSystemPollingMonitor(publisher, repo);
+            LocalFileSystemPollingMonitor monitor = new LocalFileSystemPollingMonitor(
+                publisher, repo, new ThreadSleeper()
+            );
             // add sigterm handling
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 System.out.println("\r\nReceived termination signal.\r\nCleaning up the mess...");

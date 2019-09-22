@@ -12,6 +12,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
+import sleepers.Sleeper;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,27 +20,26 @@ import java.util.List;
 import java.util.Optional;
 
 
-public class LocalFileSystemPollingMonitor extends PollingMonitor {
+class LocalFileSystemPollingMonitor extends PollingMonitor {
 
     private static final String REPOSITORY_CLONE_DIRECTORY = System.getProperty("java.io.tmpdir");
 
     private static final String DEFAULT_BRANCH = "master";
 
     private final String sourcePath;
-    private String clonePath;
     private Git sourceRepoObj;
     private Git cloneRepoObj;
     private final FileSystemHelper fsHelper;
 
-    public LocalFileSystemPollingMonitor(Publisher<Commit> publisher, String path) throws Exception {
-        super(publisher, new LocalFileSystemRepository(path));
+    LocalFileSystemPollingMonitor(Publisher<Commit> publisher, String path, Sleeper sleeper) throws Exception {
+        super(publisher, new LocalFileSystemRepository(path), sleeper);
         fsHelper = new UnixFileSystemHelper();
         sourcePath = fsHelper.getDirectoryPath(path);
     }
 
     @Override
     void init() {
-        String repoName = null;
+        String repoName;
         try {
             repoName = fsHelper.getDirectoryName(sourcePath);
         } catch(IOException e) {
@@ -48,7 +48,7 @@ public class LocalFileSystemPollingMonitor extends PollingMonitor {
                 sourcePath
             ));
         }
-        clonePath = fsHelper.join(REPOSITORY_CLONE_DIRECTORY, repoName);
+        String clonePath = fsHelper.join(REPOSITORY_CLONE_DIRECTORY, repoName);
 
         logger.finest(String.format("Will clone %s to %s", sourcePath, clonePath));
 

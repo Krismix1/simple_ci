@@ -19,13 +19,13 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class AbstractMonitorTest {
 
-    private static class TestMonitor extends AbstractMonitor {
-        TestMonitor(Publisher<Commit> publisher) {
+    private static class MockMonitor extends AbstractMonitor {
+        MockMonitor(Publisher<Commit> publisher) {
             super(publisher);
         }
     }
 
-    private static class TestPublisher implements Publisher<Commit> {
+    static class MockPublisher implements Publisher<Commit> {
         @Override
         public void publishMessage(Commit message) {
             assertNotNull(message);
@@ -33,13 +33,13 @@ class AbstractMonitorTest {
     }
 
     @Mock
-    private TestPublisher mockPublisher;
+    private MockPublisher mockPublisher;
 
     private AbstractMonitor abstractMonitor;
 
     @BeforeEach
     void setUp() {
-        this.abstractMonitor = new TestMonitor(mockPublisher);
+        this.abstractMonitor = new MockMonitor(mockPublisher);
     }
 
     @AfterEach
@@ -48,7 +48,7 @@ class AbstractMonitorTest {
 
     @Test
     void requireNotNullPublisher() {
-        assertThrows(NullPointerException.class, () -> new TestMonitor(null));
+        assertThrows(NullPointerException.class, () -> new MockMonitor(null));
     }
 
     @Test
