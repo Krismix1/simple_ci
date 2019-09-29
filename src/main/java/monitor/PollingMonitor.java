@@ -3,6 +3,7 @@ package monitor;
 import messaging.Publisher;
 import models.Commit;
 import models.Repository;
+import sleepers.Sleeper;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -10,30 +11,28 @@ import java.util.Optional;
 // this class is abstract
 // as we can poll a repo on the local file system
 // or over network (Github, GitLab, Bitbucket etc.)
-public abstract class PollingMonitor extends AbstractMonitor {
+abstract class PollingMonitor extends AbstractMonitor {
 
-    private boolean stopped = false;
+    private boolean running = false;
     final Repository repository;
+    private final Sleeper sleeper;
 
-    PollingMonitor(Publisher<Commit> publisher, Repository repository) {
+    PollingMonitor(Publisher<Commit> publisher, Repository repository, Sleeper sleeper) {
         super(publisher);
         this.repository = repository;
+        this.sleeper = sleeper;
     }
 
-    public final void run() {
+    final void run() {
         this.init();
 
-        while (!this.stopped) {
-            // The lines bellow can be written as this:
-//            Optional<Commit> commit = this.checkNewCommits();
-//            if (commit.isPresent()) {
-//                this.notifyRepoUpdated(commit.get()); // template pattern
-//            }
-            this.checkNewCommits()
-                    .ifPresent(this::notifyRepoUpdated); // template pattern
+        running = true;
+        while (running) {
+
+            doCheck();
 
             try {
-                Thread.sleep(5000L);
+                sleeper.sleep(5000);
             } catch (InterruptedException e) {
                 logger.fine(String.format("Caught exception while waiting: %s", Arrays.toString(e.getStackTrace())));
             }
@@ -45,8 +44,13 @@ public abstract class PollingMonitor extends AbstractMonitor {
 
     abstract void init();
 
-    public void stop() {
+    void stop() {
+        running = false;
         logger.finest("stop method called");
-        this.stopped = true;
+    }
+
+    void doCheck() {
+        this.checkNewCommits()
+            .ifPresent(this::notifyRepoUpdated);
     }
 }
