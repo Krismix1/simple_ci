@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+
+if [ -z "$1" ]; then
+    >&2 echo "Provide path for repository to be cloned."
+    exit 1
+fi
+
 set -eu
-echo $1 > /dev/null # dirty hack of checking that parameter was set
-mvn clean package && java -jar target/*-jar-with-dependencies.jar $1
+
+REPO=$1
+
+mvn clean package && java -jar target/*-jar-with-dependencies.jar "$REPO"
