@@ -28,7 +28,7 @@ public class RabbitMQPublisher<T extends Message> implements Publisher<T> {
         this.connectionFactory = connectionFactory;
     }
 
-    void init(String queueName) {
+    private void init(String queueName) {
         this.queueName = Objects.requireNonNull(queueName);
         this.exchangeName = this.queueName + ".exchange";
         this.routingKey = this.queueName + ".routing";

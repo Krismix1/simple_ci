@@ -48,6 +48,7 @@ class LocalFileSystemPollingMonitor extends PollingMonitor {
                 sourcePath
             ));
         }
+        // TODO: 9/29/19 Create a subdirectory
         String clonePath = fsHelper.join(REPOSITORY_CLONE_DIRECTORY, repoName);
 
         logger.debug("Will clone {} to {}", sourcePath, clonePath);

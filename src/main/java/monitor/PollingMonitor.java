@@ -34,7 +34,7 @@ abstract class PollingMonitor extends AbstractMonitor {
             try {
                 sleeper.sleep(5000);
             } catch (InterruptedException e) {
-                logger.debug("Caught exception while waiting: {}", e);
+                logger.debug("Caught exception while waiting", e);
             }
         }
         logger.debug("PollingMonitor has stopped");
