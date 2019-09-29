@@ -1,16 +1,17 @@
 package filesystem;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.logging.Logger;
 
 public class UnixFileSystemHelper implements FileSystemHelper {
 
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Override
     public String getDirectoryName(String path) throws IOException {
@@ -48,10 +49,10 @@ public class UnixFileSystemHelper implements FileSystemHelper {
                             .toAbsolutePath();
 
         if (Files.isRegularFile(pathObj)) {
-            this.logger.warning(String.format(
-                    "Path %s points to file. Extracting containing directory",
+            logger.warn(
+                    "Path {} points to file. Extracting containing directory",
                     pathObj.toString()
-            ));
+            );
             pathObj = pathObj.getParent();
         }
         return pathObj.toString();
@@ -63,7 +64,7 @@ public class UnixFileSystemHelper implements FileSystemHelper {
             Path dirPath = Paths.get(this.getDirectoryPath(path));
             return Files.isDirectory(dirPath);
         } catch (IOException ex) {
-            logger.info(String.format("Path not found: %s", ex.getMessage()));
+            logger.info("Path not found: {}", ex.getMessage());
             return false;
         }
     }

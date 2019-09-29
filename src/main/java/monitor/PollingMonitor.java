@@ -34,10 +34,10 @@ abstract class PollingMonitor extends AbstractMonitor {
             try {
                 sleeper.sleep(5000);
             } catch (InterruptedException e) {
-                logger.fine(String.format("Caught exception while waiting: %s", Arrays.toString(e.getStackTrace())));
+                logger.debug("Caught exception while waiting: {}", e);
             }
         }
-        logger.finest("PollingMonitor has stopped");
+        logger.debug("PollingMonitor has stopped");
     }
 
     abstract Optional<Commit> checkNewCommits();
@@ -46,7 +46,7 @@ abstract class PollingMonitor extends AbstractMonitor {
 
     void stop() {
         running = false;
-        logger.finest("stop method called");
+        logger.debug("stop method called");
     }
 
     void doCheck() {

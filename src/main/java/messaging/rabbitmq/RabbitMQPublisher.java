@@ -5,11 +5,15 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.MessageProperties;
 import messaging.Message;
 import messaging.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Objects;
 
 public class RabbitMQPublisher<T extends Message> implements Publisher<T> {
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private Connection connection;
     private Channel channel;
@@ -34,7 +38,7 @@ public class RabbitMQPublisher<T extends Message> implements Publisher<T> {
             channel.queueDeclare(queueName, true, false, false, null).getQueue();
             channel.queueBind(queueName, exchangeName, routingKey);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Caught exception while initializing queue {}", queueName);
         }
     }
 
@@ -58,7 +62,7 @@ public class RabbitMQPublisher<T extends Message> implements Publisher<T> {
                     message.serialize()
             );
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Caught exception while publishing message '{}' to queue {}", message, queueName);
         }
     }
 }

@@ -50,7 +50,7 @@ class LocalFileSystemPollingMonitor extends PollingMonitor {
         }
         String clonePath = fsHelper.join(REPOSITORY_CLONE_DIRECTORY, repoName);
 
-        logger.finest(String.format("Will clone %s to %s", sourcePath, clonePath));
+        logger.debug("Will clone {} to {}", sourcePath, clonePath);
 
         try {
             sourceRepoObj = Git.open(new File(sourcePath));
@@ -112,11 +112,11 @@ class LocalFileSystemPollingMonitor extends PollingMonitor {
                 .setFastForward(MergeCommand.FastForwardMode.FF_ONLY)
                 .call();
         } catch (GitAPIException e) {
-            logger.severe(String.format(
-                "Failed to fast-forward repo %s, branch %s",
+            logger.error(
+                "Failed to fast-forward repo {}, branch {}",
                 cloneRepoObj.getRepository().getIdentifier(),
                 DEFAULT_BRANCH
-            ));
+            );
             // let's try again the next time
             return Optional.empty();
         }
@@ -134,9 +134,9 @@ class LocalFileSystemPollingMonitor extends PollingMonitor {
                 }
             }
         } catch (GitAPIException e) {
-            logger.severe(String.format("Failed to retrieve last commit for repo %s, branch %s",
+            logger.error("Failed to retrieve last commit for repo {}, branch {}",
                 repo.getRepository().getIdentifier(),
-                branchId));
+                branchId);
         }
         return Optional.empty();
     }

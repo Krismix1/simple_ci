@@ -2,14 +2,14 @@ package monitor;
 
 import messaging.Publisher;
 import models.Commit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.logging.Logger;
 
 abstract class AbstractMonitor {
 
-    // TODO: 6/2/19 Use the sl4j logger
-    final Logger logger = Logger.getLogger(this.getClass().getName());
+    final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final Publisher<Commit> publisher;
 
@@ -28,8 +28,7 @@ abstract class AbstractMonitor {
         if (commit == null) {
             throw new IllegalArgumentException("Commit object should not be null");
         }
-        this.logger.finest("New commit detected");
-        this.logger.finest("Commit hash " + commit.getHash());
+        logger.debug("New commit detected. Commit hash {}", commit.getHash());
 
         this.publisher.publishMessage(commit);
     }
