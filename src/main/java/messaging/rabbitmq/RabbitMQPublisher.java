@@ -10,12 +10,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.TimeoutException;
 
 public class RabbitMQPublisher<T extends Message> implements Publisher<T> {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private Connection connection;
+    private final RabbitMQConnectionFactory connectionFactory;
     private Channel channel;
     private String exchangeName;
     private String routingKey;
@@ -24,16 +25,24 @@ public class RabbitMQPublisher<T extends Message> implements Publisher<T> {
     private boolean initialized = false; // TODO: This needs second thoughts
 
     public RabbitMQPublisher(RabbitMQConnectionFactory connectionFactory) {
-        this.connection = connectionFactory.getConnection();
+        this.connectionFactory = connectionFactory;
     }
 
-    public void init(String queueName) {
+    void init(String queueName) {
         this.queueName = Objects.requireNonNull(queueName);
         this.exchangeName = this.queueName + ".exchange";
         this.routingKey = this.queueName + ".routing";
 
+        Connection connection;
         try {
-            this.channel = this.connection.createChannel();
+            connection = this.connectionFactory.getConnection();
+        } catch (IOException | TimeoutException e) {
+            logger.error("Exception when trying to connect to RabbitMQ. Queue name: ", e);
+            throw new RuntimeException(e);
+        }
+
+        try {
+            channel = connection.createChannel();
             channel.exchangeDeclare(exchangeName, "direct", true);
             channel.queueDeclare(queueName, true, false, false, null).getQueue();
             channel.queueBind(queueName, exchangeName, routingKey);

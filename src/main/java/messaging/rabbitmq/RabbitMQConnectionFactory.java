@@ -20,12 +20,7 @@ public class RabbitMQConnectionFactory {
         connectionFactory.setPort(parameters.getPort());
     }
 
-    public Connection getConnection() {
-        try {
-            return this.connectionFactory.newConnection();
-        } catch (IOException | TimeoutException e) {
-            e.printStackTrace();
-        }
-        return null;
+    Connection getConnection() throws IOException, TimeoutException {
+        return connectionFactory.newConnection();
     }
 }

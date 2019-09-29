@@ -31,7 +31,7 @@ class LocalFileSystemPollingMonitor extends PollingMonitor {
     private Git cloneRepoObj;
     private final FileSystemHelper fsHelper;
 
-    LocalFileSystemPollingMonitor(Publisher<Commit> publisher, String path, Sleeper sleeper) throws Exception {
+    LocalFileSystemPollingMonitor(Publisher<Commit> publisher, String path, Sleeper sleeper) throws IOException {
         super(publisher, new LocalFileSystemRepository(path), sleeper);
         fsHelper = new UnixFileSystemHelper();
         sourcePath = fsHelper.getDirectoryPath(path);
